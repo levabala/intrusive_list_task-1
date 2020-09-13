@@ -1,30 +1,47 @@
-#include <gtest/gtest.h>
 #include "intrusive_list.h"
 #include "test_utils.h"
+#include <gtest/gtest.h>
 
-struct node : intrusive::list_element<>
-{
-    explicit node(int value)
-        : value(value)
-    {}
+struct node : intrusive::list_element<> {
+    explicit node(int value) : value(value) {
+    }
 
     int value;
 };
 
-TEST(intrusive_list_testing, default_ctor)
-{
+void print_list(intrusive::list<node>* l) noexcept {
+    auto front = l->head;
+
+    while (front != nullptr) {
+        std::cout << static_cast<node*>(front)->value << " ";
+
+        auto front_next = front->next;
+        front = front_next;
+    }
+
+    std::cout << "\n";
+}
+
+void print_list_iterator(intrusive::list<node>* l) noexcept {
+
+    for (auto i = l->begin(); i != l->end(); i++) {
+        std::cout << i->value << " ";
+    }
+
+    std::cout << "\n";
+}
+
+TEST(intrusive_list_testing, default_ctor) {
     intrusive::list<node> list;
 }
 
-TEST(intrusive_list_testing, ends_01)
-{
+TEST(intrusive_list_testing, ends_01) {
     intrusive::list<node> list;
-    node a(1);
+    node                  a(1);
     list.push_back(a);
 }
 
-TEST(intrusive_list_testing, ends_02)
-{
+TEST(intrusive_list_testing, ends_02) {
     node a(1);
     {
         intrusive::list<node> list;
@@ -32,10 +49,9 @@ TEST(intrusive_list_testing, ends_02)
     }
 }
 
-TEST(intrusive_list_testing, ends_03)
-{
+TEST(intrusive_list_testing, ends_03) {
     intrusive::list<node> list;
-    node a(1), b(2), c(3), d(4);
+    node                  a(1), b(2), c(3), d(4);
     list.push_back(a);
     list.push_back(b);
     list.push_back(c);
@@ -54,8 +70,7 @@ TEST(intrusive_list_testing, ends_03)
     EXPECT_EQ(3, list.back().value);
 }
 
-TEST(intrusive_list_testing, ends_04)
-{
+TEST(intrusive_list_testing, ends_04) {
     node a(1);
     {
         intrusive::list<node> list;
@@ -70,16 +85,13 @@ TEST(intrusive_list_testing, ends_04)
     }
 }
 
-TEST(intrusive_list_testing, ends_05)
-{
+TEST(intrusive_list_testing, ends_05) {
     intrusive::list<node> list;
-    node a(1);
+    node                  a(1);
     list.push_front(a);
 }
 
-
-TEST(intrusive_list_testing, ends_06)
-{
+TEST(intrusive_list_testing, ends_06) {
     node a(1);
     {
         intrusive::list<node> list;
@@ -87,8 +99,7 @@ TEST(intrusive_list_testing, ends_06)
     }
 }
 
-TEST(intrusive_list_testing, ends_07)
-{
+TEST(intrusive_list_testing, ends_07) {
     node a(1);
     {
         intrusive::list<node> list;
@@ -103,10 +114,9 @@ TEST(intrusive_list_testing, ends_07)
     }
 }
 
-TEST(intrusive_list_testing, back_front)
-{
+TEST(intrusive_list_testing, back_front) {
     intrusive::list<node> list;
-    node a(1), b(2), c(3);
+    node                  a(1), b(2), c(3);
     mass_push_back(list, a, b, c);
     EXPECT_EQ(1, list.front().value);
     EXPECT_EQ(1, std::as_const(list).front().value);
@@ -114,37 +124,39 @@ TEST(intrusive_list_testing, back_front)
     EXPECT_EQ(3, std::as_const(list).back().value);
 }
 
-TEST(intrusive_list_testing, back_front_ref)
-{
+TEST(intrusive_list_testing, back_front_ref) {
     intrusive::list<node> list;
-    node a(1), b(2), c(3), d(4), e(5);
+    node                  a(1), b(2), c(3), d(4), e(5);
     mass_push_back(list, a, b, c, d, e);
+    print_list(&list);
+    print_list_iterator(&list);
     list.front().value = 6;
+    print_list(&list);
+    print_list_iterator(&list);
     list.back().value = 7;
+    print_list(&list);
+    print_list_iterator(&list);
     expect_eq(list, {6, 2, 3, 4, 7});
 }
 
-TEST(intrusive_list_testing, back_front_cref)
-{
+TEST(intrusive_list_testing, back_front_cref) {
     intrusive::list<node> list;
-    node a(1), b(2), c(3), d(4), e(5);
+    node                  a(1), b(2), c(3), d(4), e(5);
     mass_push_back(list, a, b, c, d, e);
     EXPECT_TRUE(&list.front() == &std::as_const(list).front());
     EXPECT_TRUE(&list.back() == &std::as_const(list).back());
 }
 
-TEST(intrusive_list_testing, move_ctor_empty)
-{
+TEST(intrusive_list_testing, move_ctor_empty) {
     intrusive::list<node> list1;
     intrusive::list<node> list2 = std::move(list1);
 
     EXPECT_TRUE(list2.empty());
 }
 
-TEST(intrusive_list_testing, move_ctor)
-{
+TEST(intrusive_list_testing, move_ctor) {
     intrusive::list<node> list1;
-    node a(1), b(2), c(3);
+    node                  a(1), b(2), c(3);
     mass_push_back(list1, a, b, c);
     intrusive::list<node> list2 = std::move(list1);
 
@@ -152,39 +164,35 @@ TEST(intrusive_list_testing, move_ctor)
     expect_eq(list2, {1, 2, 3});
 }
 
-TEST(intrusive_list_testing, move_operator_empty)
-{
+TEST(intrusive_list_testing, move_operator_empty) {
     intrusive::list<node> list1, list2;
     list1 = std::move(list2);
     EXPECT_TRUE(list1.empty());
     EXPECT_TRUE(list2.empty());
 }
 
-TEST(intrusive_list_testing, move_operator_from_empty)
-{
+TEST(intrusive_list_testing, move_operator_from_empty) {
     intrusive::list<node> list1, list2;
-    node a(1), b(2), c(3);
+    node                  a(1), b(2), c(3);
     mass_push_back(list2, a, b, c);
     list1 = std::move(list2);
     expect_eq(list1, {1, 2, 3});
     EXPECT_TRUE(list2.empty());
 }
 
-TEST(intrusive_list_testing, move_operator_to_empty)
-{
+TEST(intrusive_list_testing, move_operator_to_empty) {
     intrusive::list<node> list1, list2;
-    node a(1), b(2), c(3);
+    node                  a(1), b(2), c(3);
     mass_push_back(list1, a, b, c);
     list1 = std::move(list2);
     EXPECT_TRUE(list1.empty());
     EXPECT_TRUE(list2.empty());
 }
 
-TEST(intrusive_list_testing, move_operator)
-{
+TEST(intrusive_list_testing, move_operator) {
     intrusive::list<node> list1, list2;
-    node a(1), b(2), c(3);
-    node d(4), e(5), f(6);
+    node                  a(1), b(2), c(3);
+    node                  d(4), e(5), f(6);
     mass_push_back(list1, a, b, c);
     mass_push_back(list2, d, e, f);
     list1 = std::move(list2);
@@ -192,29 +200,26 @@ TEST(intrusive_list_testing, move_operator)
     EXPECT_TRUE(list2.empty());
 }
 
-TEST(intrusive_list_testing, iterators_01)
-{
+TEST(intrusive_list_testing, iterators_01) {
     intrusive::list<node> list;
-    EXPECT_TRUE (list.begin() == list.end());
+    EXPECT_TRUE(list.begin() == list.end());
     EXPECT_FALSE(list.begin() != list.end());
 
     intrusive::list<node> const& clist = list;
-    EXPECT_TRUE (clist.begin() == clist.end());
+    EXPECT_TRUE(clist.begin() == clist.end());
     EXPECT_FALSE(clist.begin() != clist.end());
 }
 
-TEST(intrusive_list_testing, iterators_02)
-{
-    intrusive::list<node> list;
+TEST(intrusive_list_testing, iterators_02) {
+    intrusive::list<node>           list;
     intrusive::list<node>::iterator it;
     it = list.begin();
 }
 
-TEST(intrusive_list_testing, iterators_03)
-{
+TEST(intrusive_list_testing, iterators_03) {
     intrusive::list<node> list;
-    auto it1 = list.begin();
-    auto it2 = list.end();
+    auto                  it1 = list.begin();
+    auto                  it2 = list.end();
 
     node a(1);
     list.push_back(a);
@@ -230,10 +235,9 @@ TEST(intrusive_list_testing, iterators_03)
     EXPECT_TRUE(it1 == it3);
 }
 
-TEST(intrusive_list_testing, iterators_04)
-{
+TEST(intrusive_list_testing, iterators_04) {
     intrusive::list<node> list;
-    node a(1), b(2), c(3);
+    node                  a(1), b(2), c(3);
 
     list.push_back(b);
     list.push_back(c);
@@ -252,25 +256,23 @@ TEST(intrusive_list_testing, iterators_04)
     EXPECT_TRUE(i == list.end());
 }
 
-TEST(intrusive_list_testing, iterators_05)
-{
+TEST(intrusive_list_testing, iterators_05) {
     intrusive::list<node> list;
-    node a(1);
+    node                  a(1);
 
     list.push_back(a);
 
-    auto it1 = list.begin();
+    auto  it1 = list.begin();
     node& ra1 = *it1;
     EXPECT_EQ(&a, &ra1);
     auto const it2 = it1;
-    node& ra2 = *it2;
+    node&      ra2 = *it2;
     EXPECT_EQ(&a, &ra2);
 }
 
-TEST(intrusive_list_testing, iterators_06)
-{
+TEST(intrusive_list_testing, iterators_06) {
     intrusive::list<node> list;
-    node a(1);
+    node                  a(1);
 
     list.push_back(a);
 
@@ -279,10 +281,9 @@ TEST(intrusive_list_testing, iterators_06)
     EXPECT_EQ(1, it2->value);
 }
 
-TEST(intrusive_list_testing, iterators_07)
-{
+TEST(intrusive_list_testing, iterators_07) {
     intrusive::list<node> list;
-    node a(1), b(2);
+    node                  a(1), b(2);
 
     list.push_back(a);
     list.push_back(b);
@@ -292,10 +293,9 @@ TEST(intrusive_list_testing, iterators_07)
     EXPECT_EQ(2, it2->value);
 }
 
-TEST(intrusive_list_testing, iterators_08)
-{
+TEST(intrusive_list_testing, iterators_08) {
     intrusive::list<node> list;
-    node a(1), b(2), c(3);
+    node                  a(1), b(2), c(3);
 
     list.push_back(b);
     list.push_back(c);
@@ -314,10 +314,9 @@ TEST(intrusive_list_testing, iterators_08)
     EXPECT_TRUE(i == list.begin());
 }
 
-TEST(intrusive_list_testing, iterators_09)
-{
+TEST(intrusive_list_testing, iterators_09) {
     intrusive::list<node> list;
-    node a(1), b(2);
+    node                  a(1), b(2);
 
     list.push_back(a);
     list.push_back(b);
@@ -328,10 +327,9 @@ TEST(intrusive_list_testing, iterators_09)
     EXPECT_EQ(1, it2->value);
 }
 
-TEST(intrusive_list_testing, iterators_10)
-{
+TEST(intrusive_list_testing, iterators_10) {
     intrusive::list<node> list;
-    node a(1), b(2);
+    node                  a(1), b(2);
 
     list.push_back(a);
     list.push_back(b);
@@ -343,23 +341,21 @@ TEST(intrusive_list_testing, iterators_10)
     EXPECT_EQ(2, it2->value);
 }
 
-TEST(intrusive_list_testing, iterators_11)
-{
+TEST(intrusive_list_testing, iterators_11) {
     intrusive::list<node> list;
-    node a(1);
+    node                  a(1);
 
     list.push_back(a);
 
-    intrusive::list<node>::iterator it = list.begin();
+    intrusive::list<node>::iterator       it = list.begin();
     intrusive::list<node>::const_iterator it2 = it;
 
     EXPECT_EQ(1, it2->value);
 }
 
-TEST(intrusive_list_testing, insert_01)
-{
+TEST(intrusive_list_testing, insert_01) {
     intrusive::list<node> list;
-    node a(1), b(2), c(3), d(4);
+    node                  a(1), b(2), c(3), d(4);
 
     list.push_back(b);
     list.push_back(c);
@@ -377,10 +373,9 @@ TEST(intrusive_list_testing, insert_01)
     EXPECT_EQ(1, it1->value);
 }
 
-TEST(intrusive_list_testing, insert_02)
-{
+TEST(intrusive_list_testing, insert_02) {
     intrusive::list<node> list;
-    node a(1), b(2), c(3), d(4);
+    node                  a(1), b(2), c(3), d(4);
 
     list.push_back(a);
     list.push_back(b);
@@ -403,10 +398,9 @@ TEST(intrusive_list_testing, insert_02)
     EXPECT_EQ(3, it1->value);
 }
 
-TEST(intrusive_list_testing, insert_03)
-{
+TEST(intrusive_list_testing, insert_03) {
     intrusive::list<node> list;
-    node a(1), b(2), c(3), d(4);
+    node                  a(1), b(2), c(3), d(4);
 
     list.push_back(a);
     list.push_back(b);
@@ -425,10 +419,9 @@ TEST(intrusive_list_testing, insert_03)
     EXPECT_EQ(4, it1->value);
 }
 
-TEST(intrusive_list_testing, insert_04)
-{
+TEST(intrusive_list_testing, insert_04) {
     intrusive::list<node> list;
-    node a(1), b(2), c(3), d(4);
+    node                  a(1), b(2), c(3), d(4);
 
     list.push_back(b);
     list.push_back(c);
@@ -442,10 +435,9 @@ TEST(intrusive_list_testing, insert_04)
     EXPECT_TRUE(it2 == list.begin());
 }
 
-TEST(intrusive_list_testing, insert_05)
-{
+TEST(intrusive_list_testing, insert_05) {
     intrusive::list<node> list;
-    node a(1), b(2), c(3), d(4);
+    node                  a(1), b(2), c(3), d(4);
 
     list.push_back(b);
     list.push_back(c);
@@ -461,10 +453,9 @@ TEST(intrusive_list_testing, insert_05)
     EXPECT_EQ(3, it1->value);
 }
 
-TEST(intrusive_list_testing, erase_01)
-{
+TEST(intrusive_list_testing, erase_01) {
     intrusive::list<node> list;
-    node a(1), b(2), c(3);
+    node                  a(1), b(2), c(3);
 
     list.push_back(a);
     list.push_back(b);
@@ -475,10 +466,9 @@ TEST(intrusive_list_testing, erase_01)
     EXPECT_TRUE(it1 == list.begin());
 }
 
-TEST(intrusive_list_testing, erase_02)
-{
+TEST(intrusive_list_testing, erase_02) {
     intrusive::list<node> list;
-    node a(1), b(2), c(3);
+    node                  a(1), b(2), c(3);
 
     list.push_back(a);
     list.push_back(b);
@@ -493,10 +483,9 @@ TEST(intrusive_list_testing, erase_02)
     EXPECT_TRUE(it2 == list.begin());
 }
 
-TEST(intrusive_list_testing, erase_03)
-{
+TEST(intrusive_list_testing, erase_03) {
     intrusive::list<node> list;
-    node a(1), b(2), c(3);
+    node                  a(1), b(2), c(3);
 
     list.push_back(a);
     list.push_back(b);
@@ -510,11 +499,10 @@ TEST(intrusive_list_testing, erase_03)
     EXPECT_EQ(2, it2->value);
 }
 
-TEST(intrusive_list_testing, splice_begin_begin)
-{
+TEST(intrusive_list_testing, splice_begin_begin) {
     intrusive::list<node> c1, c2;
-    node a(1), b(2), c(3), d(4);
-    node e(5), f(6), g(7), h(8);
+    node                  a(1), b(2), c(3), d(4);
+    node                  e(5), f(6), g(7), h(8);
     mass_push_back(c1, a, b, c, d);
     mass_push_back(c2, e, f, g, h);
     c1.splice(c1.begin(), c2, c2.begin(), std::next(c2.begin(), 2));
@@ -522,11 +510,10 @@ TEST(intrusive_list_testing, splice_begin_begin)
     expect_eq(c2, {7, 8});
 }
 
-TEST(intrusive_list_testing, splice_begin_middle)
-{
+TEST(intrusive_list_testing, splice_begin_middle) {
     intrusive::list<node> c1, c2;
-    node a(1), b(2), c(3), d(4);
-    node e(5), f(6), g(7), h(8);
+    node                  a(1), b(2), c(3), d(4);
+    node                  e(5), f(6), g(7), h(8);
     mass_push_back(c1, a, b, c, d);
     mass_push_back(c2, e, f, g, h);
     c1.splice(c1.begin(), c2, std::next(c2.begin()), std::next(c2.begin(), 2));
@@ -534,11 +521,10 @@ TEST(intrusive_list_testing, splice_begin_middle)
     expect_eq(c2, {5, 7, 8});
 }
 
-TEST(intrusive_list_testing, splice_begin_end)
-{
+TEST(intrusive_list_testing, splice_begin_end) {
     intrusive::list<node> c1, c2;
-    node a(1), b(2), c(3), d(4);
-    node e(5), f(6), g(7), h(8);
+    node                  a(1), b(2), c(3), d(4);
+    node                  e(5), f(6), g(7), h(8);
     mass_push_back(c1, a, b, c, d);
     mass_push_back(c2, e, f, g, h);
     c1.splice(c1.begin(), c2, std::next(c2.begin(), 2), c2.end());
@@ -546,11 +532,10 @@ TEST(intrusive_list_testing, splice_begin_end)
     expect_eq(c2, {5, 6});
 }
 
-TEST(intrusive_list_testing, splice_begin_whole)
-{
+TEST(intrusive_list_testing, splice_begin_whole) {
     intrusive::list<node> c1, c2;
-    node a(1), b(2), c(3), d(4);
-    node e(5), f(6), g(7), h(8);
+    node                  a(1), b(2), c(3), d(4);
+    node                  e(5), f(6), g(7), h(8);
     mass_push_back(c1, a, b, c, d);
     mass_push_back(c2, e, f, g, h);
     c1.splice(c1.begin(), c2, c2.begin(), c2.end());
@@ -558,11 +543,10 @@ TEST(intrusive_list_testing, splice_begin_whole)
     EXPECT_TRUE(c2.empty());
 }
 
-TEST(intrusive_list_testing, splice_begin_empty)
-{
+TEST(intrusive_list_testing, splice_begin_empty) {
     intrusive::list<node> c1, c2;
-    node a(1), b(2), c(3), d(4);
-    node e(5), f(6), g(7), h(8);
+    node                  a(1), b(2), c(3), d(4);
+    node                  e(5), f(6), g(7), h(8);
     mass_push_back(c1, a, b, c, d);
     mass_push_back(c2, e, f, g, h);
     c1.splice(c1.begin(), c2, std::next(c2.begin(), 2), std::next(c2.begin(), 2));
@@ -570,11 +554,10 @@ TEST(intrusive_list_testing, splice_begin_empty)
     expect_eq(c2, {5, 6, 7, 8});
 }
 
-TEST(intrusive_list_testing, splice_middle_begin)
-{
+TEST(intrusive_list_testing, splice_middle_begin) {
     intrusive::list<node> c1, c2;
-    node a(1), b(2), c(3), d(4);
-    node e(5), f(6), g(7), h(8);
+    node                  a(1), b(2), c(3), d(4);
+    node                  e(5), f(6), g(7), h(8);
     mass_push_back(c1, a, b, c, d);
     mass_push_back(c2, e, f, g, h);
     c1.splice(std::next(c1.begin(), 2), c2, c2.begin(), std::next(c2.begin(), 2));
@@ -582,11 +565,10 @@ TEST(intrusive_list_testing, splice_middle_begin)
     expect_eq(c2, {7, 8});
 }
 
-TEST(intrusive_list_testing, splice_middle_middle)
-{
+TEST(intrusive_list_testing, splice_middle_middle) {
     intrusive::list<node> c1, c2;
-    node a(1), b(2), c(3), d(4);
-    node e(5), f(6), g(7), h(8);
+    node                  a(1), b(2), c(3), d(4);
+    node                  e(5), f(6), g(7), h(8);
     mass_push_back(c1, a, b, c, d);
     mass_push_back(c2, e, f, g, h);
     c1.splice(std::next(c1.begin(), 2), c2, std::next(c2.begin()), std::next(c2.begin(), 3));
@@ -594,11 +576,10 @@ TEST(intrusive_list_testing, splice_middle_middle)
     expect_eq(c2, {5, 8});
 }
 
-TEST(intrusive_list_testing, splice_middle_end)
-{
+TEST(intrusive_list_testing, splice_middle_end) {
     intrusive::list<node> c1, c2;
-    node a(1), b(2), c(3), d(4);
-    node e(5), f(6), g(7), h(8);
+    node                  a(1), b(2), c(3), d(4);
+    node                  e(5), f(6), g(7), h(8);
     mass_push_back(c1, a, b, c, d);
     mass_push_back(c2, e, f, g, h);
     c1.splice(std::next(c1.begin(), 2), c2, std::next(c2.begin(), 2), c2.end());
@@ -606,11 +587,10 @@ TEST(intrusive_list_testing, splice_middle_end)
     expect_eq(c2, {5, 6});
 }
 
-TEST(intrusive_list_testing, splice_middle_whole)
-{
+TEST(intrusive_list_testing, splice_middle_whole) {
     intrusive::list<node> c1, c2;
-    node a(1), b(2), c(3), d(4);
-    node e(5), f(6), g(7), h(8);
+    node                  a(1), b(2), c(3), d(4);
+    node                  e(5), f(6), g(7), h(8);
     mass_push_back(c1, a, b, c, d);
     mass_push_back(c2, e, f, g, h);
     c1.splice(std::next(c1.begin(), 2), c2, c2.begin(), c2.end());
@@ -618,11 +598,10 @@ TEST(intrusive_list_testing, splice_middle_whole)
     EXPECT_TRUE(c2.empty());
 }
 
-TEST(intrusive_list_testing, splice_middle_empty)
-{
+TEST(intrusive_list_testing, splice_middle_empty) {
     intrusive::list<node> c1, c2;
-    node a(1), b(2), c(3), d(4);
-    node e(5), f(6), g(7), h(8);
+    node                  a(1), b(2), c(3), d(4);
+    node                  e(5), f(6), g(7), h(8);
     mass_push_back(c1, a, b, c, d);
     mass_push_back(c2, e, f, g, h);
     c1.splice(std::next(c1.begin(), 2), c2, std::next(c2.begin(), 2), std::next(c2.begin(), 2));
@@ -630,11 +609,10 @@ TEST(intrusive_list_testing, splice_middle_empty)
     expect_eq(c2, {5, 6, 7, 8});
 }
 
-TEST(intrusive_list_testing, splice_end_begin)
-{
+TEST(intrusive_list_testing, splice_end_begin) {
     intrusive::list<node> c1, c2;
-    node a(1), b(2), c(3), d(4);
-    node e(5), f(6), g(7), h(8);
+    node                  a(1), b(2), c(3), d(4);
+    node                  e(5), f(6), g(7), h(8);
     mass_push_back(c1, a, b, c, d);
     mass_push_back(c2, e, f, g, h);
     c1.splice(c1.end(), c2, c2.begin(), std::next(c2.begin(), 2));
@@ -642,11 +620,10 @@ TEST(intrusive_list_testing, splice_end_begin)
     expect_eq(c2, {7, 8});
 }
 
-TEST(intrusive_list_testing, splice_end_middle)
-{
+TEST(intrusive_list_testing, splice_end_middle) {
     intrusive::list<node> c1, c2;
-    node a(1), b(2), c(3), d(4);
-    node e(5), f(6), g(7), h(8);
+    node                  a(1), b(2), c(3), d(4);
+    node                  e(5), f(6), g(7), h(8);
     mass_push_back(c1, a, b, c, d);
     mass_push_back(c2, e, f, g, h);
     c1.splice(c1.end(), c2, std::next(c2.begin()), std::next(c2.begin(), 3));
@@ -654,11 +631,10 @@ TEST(intrusive_list_testing, splice_end_middle)
     expect_eq(c2, {5, 8});
 }
 
-TEST(intrusive_list_testing, splice_end_end)
-{
+TEST(intrusive_list_testing, splice_end_end) {
     intrusive::list<node> c1, c2;
-    node a(1), b(2), c(3), d(4);
-    node e(5), f(6), g(7), h(8);
+    node                  a(1), b(2), c(3), d(4);
+    node                  e(5), f(6), g(7), h(8);
     mass_push_back(c1, a, b, c, d);
     mass_push_back(c2, e, f, g, h);
     c1.splice(c1.end(), c2, std::next(c2.begin(), 2), c2.end());
@@ -666,11 +642,10 @@ TEST(intrusive_list_testing, splice_end_end)
     expect_eq(c2, {5, 6});
 }
 
-TEST(intrusive_list_testing, splice_end_whole)
-{
+TEST(intrusive_list_testing, splice_end_whole) {
     intrusive::list<node> c1, c2;
-    node a(1), b(2), c(3), d(4);
-    node e(5), f(6), g(7), h(8);
+    node                  a(1), b(2), c(3), d(4);
+    node                  e(5), f(6), g(7), h(8);
     mass_push_back(c1, a, b, c, d);
     mass_push_back(c2, e, f, g, h);
     c1.splice(c1.end(), c2, c2.begin(), c2.end());
@@ -678,11 +653,10 @@ TEST(intrusive_list_testing, splice_end_whole)
     EXPECT_TRUE(c2.empty());
 }
 
-TEST(intrusive_list_testing, splice_end_empty)
-{
+TEST(intrusive_list_testing, splice_end_empty) {
     intrusive::list<node> c1, c2;
-    node a(1), b(2), c(3), d(4);
-    node e(5), f(6), g(7), h(8);
+    node                  a(1), b(2), c(3), d(4);
+    node                  e(5), f(6), g(7), h(8);
     mass_push_back(c1, a, b, c, d);
     mass_push_back(c2, e, f, g, h);
     c1.splice(c1.end(), c2, std::next(c2.begin(), 2), std::next(c2.begin(), 2));
@@ -690,60 +664,54 @@ TEST(intrusive_list_testing, splice_end_empty)
     expect_eq(c2, {5, 6, 7, 8});
 }
 
-TEST(intrusive_list_testing, splice_empty_begin)
-{
+TEST(intrusive_list_testing, splice_empty_begin) {
     intrusive::list<node> c1, c2;
-    node e(5), f(6), g(7), h(8);
+    node                  e(5), f(6), g(7), h(8);
     mass_push_back(c2, e, f, g, h);
     c1.splice(c1.end(), c2, c2.begin(), std::next(c2.begin(), 2));
     expect_eq(c1, {5, 6});
     expect_eq(c2, {7, 8});
 }
 
-TEST(intrusive_list_testing, splice_empty_middle)
-{
+TEST(intrusive_list_testing, splice_empty_middle) {
     intrusive::list<node> c1, c2;
-    node e(5), f(6), g(7), h(8);
+    node                  e(5), f(6), g(7), h(8);
     mass_push_back(c2, e, f, g, h);
     c1.splice(c1.end(), c2, std::next(c2.begin(), 1), std::next(c2.begin(), 3));
     expect_eq(c1, {6, 7});
     expect_eq(c2, {5, 8});
 }
 
-TEST(intrusive_list_testing, splice_empty_end)
-{
+TEST(intrusive_list_testing, splice_empty_end) {
     intrusive::list<node> c1, c2;
-    node e(5), f(6), g(7), h(8);
+    node                  e(5), f(6), g(7), h(8);
     mass_push_back(c2, e, f, g, h);
     c1.splice(c1.end(), c2, std::next(c2.begin(), 2), c2.end());
     expect_eq(c1, {7, 8});
     expect_eq(c2, {5, 6});
 }
 
-TEST(intrusive_list_testing, splice_empty_whole)
-{
+TEST(intrusive_list_testing, splice_empty_whole) {
     intrusive::list<node> c1, c2;
-    node e(5), f(6), g(7), h(8);
+    node                  e(5), f(6), g(7), h(8);
     mass_push_back(c2, e, f, g, h);
     c1.splice(c1.end(), c2, c2.begin(), c2.end());
     expect_eq(c1, {5, 6, 7, 8});
     EXPECT_TRUE(c2.empty());
 }
 
-TEST(intrusive_list_testing, splice_self)
-{
+TEST(intrusive_list_testing, splice_self) {
     intrusive::list<node> c1;
-    node a(1), b(2), c(3), d(4), e(5);
+    node                  a(1), b(2), c(3), d(4), e(5);
     mass_push_back(c1, a, b, c, d, e);
     c1.splice(std::next(c1.begin()), c1, std::next(c1.begin(), 2), std::prev(c1.end()));
     expect_eq(c1, {1, 3, 4, 2, 5});
 }
 
-TEST(intrusive_list_testing, splice_iterators)
-{
+TEST(intrusive_list_testing, splice_iterators) {
     intrusive::list<node> c1, c2;
-    node a(1), b(2), c(3), d(4);
-    node e(5), f(6), g(7), h(8);
+    node                  a(1), b(2), c(3), d(4);
+    node                  e(5), f(6), g(7), h(8);
     mass_push_back(c1, a, b, c, d);
     mass_push_back(c2, e, f, g, h);
     intrusive::list<node>::const_iterator i = std::next(c1.begin(), 2);
@@ -762,13 +730,15 @@ TEST(intrusive_list_testing, splice_iterators)
     EXPECT_EQ(5, std::prev(k)->value);
 }
 
-void magic(node& n) { n.value = 42; }
-void magic(node const&) {}
+void magic(node& n) {
+    n.value = 42;
+}
+void magic(node const&) {
+}
 
-TEST(intrusive_list_testing, back_front_ncref)
-{
+TEST(intrusive_list_testing, back_front_ncref) {
     intrusive::list<node> list;
-    node a(1), b(2), c(3), d(4), e(5);
+    node                  a(1), b(2), c(3), d(4), e(5);
     mass_push_back(list, a, b, c, d, e);
     magic(std::as_const(list).front());
     magic(std::as_const(list).back());
@@ -776,10 +746,9 @@ TEST(intrusive_list_testing, back_front_ncref)
     expect_eq(list, {1, 2, 3, 4, 5});
 }
 
-TEST(intrusive_list_testing, iterator_deref_1)
-{
+TEST(intrusive_list_testing, iterator_deref_1) {
     intrusive::list<node> list;
-    node a(1), b(2), c(3);
+    node                  a(1), b(2), c(3);
     mass_push_back(list, a, b, c);
     intrusive::list<node>::iterator i = std::next(list.begin());
     EXPECT_EQ(2, i->value);
@@ -792,10 +761,9 @@ TEST(intrusive_list_testing, iterator_deref_1)
     expect_eq(list, {1, 42, 3});
 }
 
-TEST(intrusive_list_testing, iterator_deref_1c)
-{
+TEST(intrusive_list_testing, iterator_deref_1c) {
     intrusive::list<node> list;
-    node a(1), b(2), c(3);
+    node                  a(1), b(2), c(3);
     mass_push_back(list, a, b, c);
     intrusive::list<node>::iterator const i = std::next(list.begin());
     EXPECT_EQ(2, i->value);
@@ -808,10 +776,9 @@ TEST(intrusive_list_testing, iterator_deref_1c)
     expect_eq(list, {1, 42, 3});
 }
 
-TEST(intrusive_list_testing, iterator_deref_2)
-{
+TEST(intrusive_list_testing, iterator_deref_2) {
     intrusive::list<node> list;
-    node a(1), b(2), c(3);
+    node                  a(1), b(2), c(3);
     mass_push_back(list, a, b, c);
     intrusive::list<node>::iterator i = std::next(list.begin());
     EXPECT_EQ(2, i->value);
@@ -824,10 +791,9 @@ TEST(intrusive_list_testing, iterator_deref_2)
     expect_eq(list, {1, 42, 3});
 }
 
-TEST(intrusive_list_testing, iterator_deref_2c)
-{
+TEST(intrusive_list_testing, iterator_deref_2c) {
     intrusive::list<node> list;
-    node a(1), b(2), c(3);
+    node                  a(1), b(2), c(3);
     mass_push_back(list, a, b, c);
     intrusive::list<node>::iterator const i = std::next(list.begin());
     EXPECT_EQ(2, i->value);
@@ -840,20 +806,17 @@ TEST(intrusive_list_testing, iterator_deref_2c)
     expect_eq(list, {1, 42, 3});
 }
 
-struct multi_node : intrusive::list_element<struct tag_a>, intrusive::list_element<struct tag_b>
-{
-    explicit multi_node(int value)
-        : value(value)
-    {}
+struct multi_node : intrusive::list_element<struct tag_a>, intrusive::list_element<struct tag_b> {
+    explicit multi_node(int value) : value(value) {
+    }
 
     int value;
 };
 
-TEST(intrusive_list_testing, multiple_tags)
-{
+TEST(intrusive_list_testing, multiple_tags) {
     intrusive::list<multi_node, tag_a> list_a;
     intrusive::list<multi_node, tag_b> list_b;
-    multi_node x(1), y(2), z(3);
+    multi_node                         x(1), y(2), z(3);
 
     mass_push_back(list_a, x, y, z);
     mass_push_back(list_b, z, y, x);
@@ -862,8 +825,7 @@ TEST(intrusive_list_testing, multiple_tags)
     expect_eq(list_b, {3, 2, 1});
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
